@@ -3,6 +3,6 @@
 ## Load dataset
 ``` shell
 scalingo -region osc-fr1 -a pix-int-to-bigint-test run bash
-dbclient-fetcher pgsql
-psql -f create-schema-unreferenced-pk.sql
+# Provide in argument the number of rows to be loaded using generate_series(1, ROW_COUNT)
+npm run create-unreferenced-pk 7
 ```
