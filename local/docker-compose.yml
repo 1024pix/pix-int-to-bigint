@@ -1,5 +1,7 @@
 version: '3.7'
 
+# Similar to Scalingo Starter 16G configuration
+# https://scalingo.com/pricing/osc-fr1
 services:
   database:
     image: postgres:12.7-alpine
@@ -12,6 +14,8 @@ services:
     environment:
       POSTGRES_DB: database
       POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ./configure-schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     deploy:
