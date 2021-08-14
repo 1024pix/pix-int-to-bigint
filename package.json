@@ -8,7 +8,9 @@
   },
   "scripts": {
     "preinstall": "npx check-engine",
-    "create-unreferenced-pk": "node create-unreferenced-pk.js"
+    "local:start-database": "docker-compose --file ./local/docker-compose.yml up --detach",
+    "unreferenced-pk:load-dataset": "node ./unreferenced-pk/load-dataset.js",
+    "unreferenced-pk:change-type": "node ./unreferenced-pk/change-type.js"
   },
   "repository": {
     "type": "git",
@@ -22,7 +24,6 @@
   "homepage": "https://github.com/1024pix/pix-int-to-bigint#readme",
   "dependencies": {
     "check-engine": "^1.10.0",
-    "dotenv": "^10.0.0",
     "pg": "^8.7.1"
   }
 }

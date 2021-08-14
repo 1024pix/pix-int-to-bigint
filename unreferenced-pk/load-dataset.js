@@ -1,7 +1,6 @@
-require('dotenv').config();
-const { Pool } = require('pg');
+const {Pool} = require('pg');
 
-const execute = async()=>{
+const execute = async () => {
 
    const connectionString = process.env.DATABASE_URL;
 
@@ -15,7 +14,7 @@ const execute = async()=>{
 
    const ROW_COUNT = parseInt(process.argv[2]);
 
-   if( isNaN(ROW_COUNT) || ROW_COUNT <= 0) {
+   if (isNaN(ROW_COUNT) || ROW_COUNT <= 0) {
       console.error(`ROW_COUNT should be positive, but was given ${ROW_COUNT}`);
       process.exit(1);
    }
@@ -43,7 +42,7 @@ const execute = async()=>{
 
 }
 
-(async ()=>{
+(async () => {
    await execute();
 })()
 
