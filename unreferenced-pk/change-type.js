@@ -179,6 +179,11 @@ const changes = [
 (async () => {
 
    const logger = bunyan.createLogger({ name: 'pix_bigint' });
+
+   process.on('unhandledRejection', (error)=>{
+      logger.fatal(error);
+   });
+
    const client = new Pool(poolConfiguration);
 
    client.query = _.wrap(client.query, async function(func, query) {
