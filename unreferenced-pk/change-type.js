@@ -1,8 +1,6 @@
 const { Pool } = require('pg');
 const _ = require('lodash');
 const bunyan = require('bunyan');
-const logger = bunyan.createLogger({ name: 'pix_bigint' });
-
 const migrateRows = require('./migrate-rows-concurrently');
 
 const MAX_INTEGER = 2147483627;
@@ -20,7 +18,7 @@ const CHUNK_SIZE = million;
 const changes = [
    {
       label: 'CHANGE_UNREFERENCED_PK_WITH_TEMPORARY_COLUMN',
-      perform: async (client) => {
+      perform: async (client, logger) => {
 
          logger.info('Preparing for maintenance window:');
          await client.query('ALTER TABLE foo ADD COLUMN new_id BIGINT NOT NULL DEFAULT -1');
@@ -119,7 +117,7 @@ const changes = [
          ////////// MAINTENANCE WINDOW STOPS HERE ////////////////////////////////
 
       },
-      revert: async (client) => {
+      revert: async (client, logger) => {
          await client.query(
             `DELETE FROM foo WHERE id = ${idThatWouldBeRejectedWithInteger}`
          );
@@ -133,7 +131,7 @@ const changes = [
    },
    {
       label: 'CHANGE_UNREFERENCED_PK_IN_PLACE',
-      perform: async (client) => {
+      perform: async (client, logger) => {
 
          ////////// MAINTENANCE WINDOW STARTS HERE ////////////////////////////////
          logger.info('Opening maintenance window...');
@@ -163,7 +161,7 @@ const changes = [
          ////////// MAINTENANCE WINDOW STOPS HERE ////////////////////////////////
 
       },
-      revert: async (client) => {
+      revert: async (client, logger) => {
          await client.query(
             `DELETE FROM foo WHERE id = ${idThatWouldBeRejectedWithInteger}`
          );
@@ -180,6 +178,7 @@ const changes = [
 
 (async () => {
 
+   const logger = bunyan.createLogger({ name: 'pix_bigint' });
    const client = new Pool(poolConfiguration);
 
    client.query = _.wrap(client.query, async function(func, query) {
@@ -194,11 +193,11 @@ const changes = [
    for (const change of changes) {
 
       logger.info(`👷 Changing type with ${change.label} 🕗`);
-      await change.perform(client);
+      await change.perform(client, logger);
       logger.info(`Type changed ✔`);
 
       logger.info('Reverting 🕗');
-      await change.revert(client);
+      await change.revert(client, logger);
       logger.info(`Reverted ✔`);
 
    }
