@@ -21,8 +21,10 @@ const changes = [
 
          console.log('Preparing for maintenance window:');
 
-         await client.query('ALTER TABLE foo ADD COLUMN new_id BIGINT');
-         console.log('- new_id column has ben created');
+         await client.query('ALTER TABLE foo ADD COLUMN new_id BIGINT NOT NULL DEFAULT -1');
+         console.log('- new_id column has been created');
+
+         await client.query('CREATE INDEX CONCURRENTLY new_id_brin_idx ON foo USING brin (new_id) WHERE new_id = -1');
 
          // Feed new_id for each new inserted row
          await client.query(`CREATE OR REPLACE FUNCTION migrate_id_concurrently()
@@ -43,13 +45,6 @@ const changes = [
             '- trigger has been created, so that each new record in table will have new_id filled'
          );
 
-         // Prepare Primary key unique constraint
-         // https://www.2ndquadrant.com/en/blog/create-index-concurrently/
-         // https://dba.stackexchange.com/questions/131945/detect-when-a-create-index-concurrently-is-finished-in-postgresql
-         console.log('- starting building index concurrently on new_id');
-         await client.query('CREATE UNIQUE INDEX CONCURRENTLY idx ON foo(new_id)');
-         console.log('- index on new_id has been build concurrently');
-
          // Feed new_id for each existing row
          console.log(
             `- feeding new_id on existing rows (using ${CHUNK_SIZE}-record size chunks)`
@@ -58,6 +53,15 @@ const changes = [
          await migrateRows.migrateFooId(client, CHUNK_SIZE);
          console.log(`- finished feeding new_id on existing rows`);
 
+         // Prepare Primary key unique constraint
+         // https://www.2ndquadrant.com/en/blog/create-index-concurrently/
+         // https://dba.stackexchange.com/questions/131945/detect-when-a-create-index-concurrently-is-finished-in-postgresql
+         console.log('- starting building index concurrently on new_id');
+         await client.query('CREATE UNIQUE INDEX CONCURRENTLY idx ON foo(new_id)');
+         console.log('- index on new_id has been build concurrently');
+
+         await client.query('DROP INDEX new_id_brin_idx');
+
          ////////// MAINTENANCE WINDOW STARTS HERE ////////////////////////////////
          console.log('Opening maintenance window...');
 
@@ -65,16 +69,6 @@ const changes = [
          await client.query('DROP TRIGGER trg_foo ON foo');
          await client.query('DROP FUNCTION migrate_id_concurrently');
          console.log('- triggers have been dropped');
-
-         // Migrate remaining rows
-         const resultFoo = await client.query(`
-        UPDATE foo
-        SET new_id = id
-        WHERE new_id IS NULL`);
-
-         console.log(
-            `- ${resultFoo.rowCount} remaining rows on foo have been migrated`
-         );
 
          // https://stackoverflow.com/questions/9490014/adding-serial-to-existing-column-in-postgres
          console.log('- turning sequence ownership to new_id');

@@ -6,7 +6,7 @@ const migrateFooId = async (client, chunk_size) => {
     const result = await client.query(`WITH rows AS (
           SELECT id
           FROM foo
-          WHERE new_id IS NULL
+          WHERE new_id = -1
           LIMIT ${chunk_size}
         )
         UPDATE foo
