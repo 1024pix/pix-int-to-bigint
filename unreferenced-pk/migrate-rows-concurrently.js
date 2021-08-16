@@ -1,20 +1,16 @@
 // https://blog.pilosus.org/posts/2019/12/07/postgresql-update-rows-in-chunks/
-const migrateFooId = async (client, chunk_size) => {
+const migrateFooId = async (client, chunk_size, logger) => {
   let rowsUpdatedCount = 0;
+  const { rows: [ { max: maxId } ] } = await client.query(`SELECT MAX(id) FROM foo`);
 
-  do {
-    const result = await client.query(`WITH rows AS (
-          SELECT id
-          FROM foo
-          WHERE new_id = -1
-          LIMIT ${chunk_size}
-        )
+  for(let startId = 0; startId < maxId; startId+=chunk_size) {
+    const result = await client.query(`
         UPDATE foo
         SET new_id = id
-        WHERE EXISTS (SELECT * FROM rows WHERE foo.id = rows.id)`);
-
+        WHERE ID BETWEEN ${startId} AND ${startId+chunk_size}`);
     rowsUpdatedCount = result.rowCount;
-  } while (rowsUpdatedCount >= chunk_size);
+    logger.info(`Updated rows : ${rowsUpdatedCount}`);
+  }
 };
 
 module.exports = { migrateFooId };

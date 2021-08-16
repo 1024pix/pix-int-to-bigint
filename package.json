@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/1024pix/pix-int-to-bigint#readme",
   "dependencies": {
+    "bunyan": "^1.8.15",
     "check-engine": "^1.10.0",
     "execa": "^5.1.1",
     "lodash": "^4.17.21",

@@ -9,8 +9,13 @@ services:
     restart: always
     command: postgres
       -c max_wal_size=2GB
-      -c shared_preload_libraries=pg_stat_statements -c pg_stat_statements.track=all
+      -c shared_preload_libraries=pg_stat_statements,auto_explain
+      -c pg_stat_statements.track=all
       -c work_mem=8MB
+      -c log_statement=all
+      -c log_min_messages=info
+      -c auto_explain.log_min_duration=0
+      -c auto_explain.log_analyze=1
     environment:
       POSTGRES_DB: database
       POSTGRES_HOST_AUTH_METHOD: trust
