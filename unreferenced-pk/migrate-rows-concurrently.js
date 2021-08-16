@@ -14,7 +14,6 @@ const migrateFooId = async (client, chunk_size) => {
         WHERE EXISTS (SELECT * FROM rows WHERE foo.id = rows.id)`);
 
     rowsUpdatedCount = result.rowCount;
-    console.log('* one chunk processed');
   } while (rowsUpdatedCount >= chunk_size);
 };
 

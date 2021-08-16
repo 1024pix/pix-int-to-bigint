@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const _ = require('lodash');
 
 const migrateRows = require('./migrate-rows-concurrently');
 
@@ -179,6 +180,13 @@ const changes = [
 (async () => {
 
    const client = new Pool(poolConfiguration);
+
+   client.query = _.wrap(client.query, async function(func, query) {
+      console.time(`\t${query}`);
+      const result = await func.call(this, query);
+      console.timeEnd(`\t${query}`);
+      return result;
+   });
 
    client.connect();
 
