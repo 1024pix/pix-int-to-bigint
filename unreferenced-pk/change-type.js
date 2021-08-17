@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Pool } = require('pg');
+const { Client } = require('pg');
 const _ = require('lodash');
 const bunyan = require('bunyan');
 const migrateRows = require('./migrate-rows-concurrently');
@@ -63,6 +63,10 @@ const changes = [
          logger.info('Opening maintenance window...');
          console.time('Maintenance duration');
 
+         logger.info('Put a lock on table "foo"');
+         await client.query('BEGIN TRANSACTION;');
+         await client.query('LOCK TABLE foo IN ACCESS EXCLUSIVE MODE;');
+
          // Disable migration
          await client.query('DROP TRIGGER trg_foo ON foo');
          await client.query('DROP FUNCTION migrate_id_concurrently');
@@ -111,6 +115,8 @@ const changes = [
          logger.info(
             `- INSERT has succeeded with id ${idThatWouldBeRejectedWithInteger}`
          );
+
+         await client.query('COMMIT;');
 
          console.timeEnd('Maintenance duration');
          logger.info('Closing maintenance window...');
@@ -185,7 +191,7 @@ const changes = [
       logger.fatal(error);
    });
 
-   const client = new Pool(poolConfiguration);
+   const client = new Client(poolConfiguration);
 
    client.query = _.wrap(client.query, async function(func, query) {
       console.time(`\t${query}`);
