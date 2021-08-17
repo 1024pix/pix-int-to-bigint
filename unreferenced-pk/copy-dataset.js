@@ -1,3 +1,4 @@
+require('dotenv').config();
 const execa = require('execa');
 const fs = require('fs');
 

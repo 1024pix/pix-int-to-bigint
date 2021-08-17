@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { Pool } = require('pg');
 const _ = require('lodash');
 const bunyan = require('bunyan');

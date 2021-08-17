@@ -9,6 +9,7 @@
   "scripts": {
     "preinstall": "npx check-engine",
     "local:start-database": "docker-compose --file ./local/docker-compose.yml up --detach",
+    "local:peek-last-logs": "docker logs --follow --tail 20 database",
     "unreferenced-pk:copy-dataset": "node ./unreferenced-pk/copy-dataset.js",
     "unreferenced-pk:load-dataset": "node ./unreferenced-pk/load-dataset.js",
     "unreferenced-pk:change-type": "node ./unreferenced-pk/change-type.js"
@@ -26,6 +27,7 @@
   "dependencies": {
     "bunyan": "^1.8.15",
     "check-engine": "^1.10.0",
+    "dotenv": "^10.0.0",
     "execa": "^5.1.1",
     "lodash": "^4.17.21",
     "pg": "^8.7.1",
