@@ -12,7 +12,8 @@
     "local:peek-last-logs": "docker logs --follow --tail 20 database",
     "unreferenced-pk:copy-dataset": "node ./unreferenced-pk/copy-dataset.js",
     "unreferenced-pk:load-dataset": "node ./unreferenced-pk/load-dataset.js",
-    "unreferenced-pk:change-type": "node ./unreferenced-pk/change-type.js"
+    "unreferenced-pk:change-type": "node ./unreferenced-pk/change-type.js",
+    "unreferenced-pk:fake-activity": "node ./unreferenced-pk/fake-activity.js"
   },
   "repository": {
     "type": "git",
