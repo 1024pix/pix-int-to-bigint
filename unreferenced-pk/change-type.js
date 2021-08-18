@@ -85,16 +85,19 @@ const changes = [
 
       logger.info('- dropping primary key on id');
       await client.query('ALTER TABLE foo DROP CONSTRAINT foo_pkey');
-      // Enable PK on new_id before dropping id, in case something is wrong
       logger.info('- primary key on id has been dropped');
+
+      logger.info('- dropping NOT NULL on id');
+      await client.query('ALTER TABLE foo ALTER COLUMN id DROP NOT NULL');
+      logger.info('- NOT NULL constraint on id has been dropped');
 
       logger.info('- creating primary key on new_id using existing index');
       await client.query('ALTER TABLE foo ADD CONSTRAINT foo_pkey PRIMARY KEY USING INDEX idx');
       logger.info('- primary key on new_id has been created');
 
-      logger.info('- dropping column id');
-      await client.query('ALTER TABLE foo DROP COLUMN id');
-      logger.info('- column id has been dropped');
+      logger.info('- renaming column id to old_id');
+      await client.query('ALTER TABLE foo RENAME COLUMN id TO old_id');
+      logger.info('- column id has been renamed to old_id');
 
       await client.query('ALTER TABLE foo RENAME COLUMN new_id TO id');
       logger.info('- column new_id has been renamed to id');
@@ -115,7 +118,8 @@ const changes = [
       );
       await client.query('ALTER TABLE foo DROP CONSTRAINT foo_pkey');
       await client.query('ALTER SEQUENCE foo_id_seq AS INTEGER');
-      await client.query('ALTER TABLE foo ALTER COLUMN id TYPE INTEGER');
+      await client.query('ALTER TABLE foo DROP COLUMN id');
+      await client.query('ALTER TABLE foo RENAME COLUMN new_id TO id');
       await client.query(
         'ALTER TABLE foo ADD CONSTRAINT foo_pkey PRIMARY KEY(id)'
       );
