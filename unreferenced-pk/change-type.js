@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client } = require('pg');
+const {Client} = require('pg');
 const _ = require('lodash');
 const bunyan = require('bunyan');
 const migrateRows = require('./migrate-rows-concurrently');
@@ -40,14 +40,10 @@ const changes = [
                           FOR EACH ROW
                           EXECUTE PROCEDURE migrate_id_concurrently();`);
 
-      logger.info(
-        '- trigger has been created, so that each new record in table will have new_id filled'
-      );
+      logger.info('- trigger has been created, so that each new record in table will have new_id filled');
 
       // Feed new_id for each existing row
-      logger.info(
-        `- feeding new_id on existing rows (using ${CHUNK_SIZE}-record size chunks)`
-      );
+      logger.info(`- feeding new_id on existing rows (using ${CHUNK_SIZE}-record size chunks)`);
 
       await migrateRows.migrateFooId(client, CHUNK_SIZE, logger);
       logger.info(`- finished feeding new_id on existing rows`);
@@ -64,8 +60,8 @@ const changes = [
       console.time('Maintenance duration');
 
       logger.info('Put a lock on table "foo"');
-         await client.query('BEGIN TRANSACTION;');
-         await client.query('LOCK TABLE foo IN ACCESS EXCLUSIVE MODE;');// Disable migration
+      await client.query('BEGIN TRANSACTION;');
+      await client.query('LOCK TABLE foo IN ACCESS EXCLUSIVE MODE;');// Disable migration
       await client.query('DROP TRIGGER trg_foo ON foo');
       await client.query('DROP FUNCTION migrate_id_concurrently');
       logger.info('- triggers have been dropped');
@@ -80,9 +76,7 @@ const changes = [
       logger.info('- sequence type is now BIGINT');
 
       logger.info('- attaching sequence to new_id');
-      await client.query(
-        `ALTER TABLE foo ALTER COLUMN new_id SET DEFAULT nextval('foo_id_seq')`
-      );
+      await client.query(`ALTER TABLE foo ALTER COLUMN new_id SET DEFAULT nextval('foo_id_seq')`);
       logger.info('- sequence has attached to new_id');
 
       logger.info('- detaching sequence from id');
@@ -95,9 +89,7 @@ const changes = [
       logger.info('- primary key on id has been dropped');
 
       logger.info('- creating primary key on new_id using existing index');
-      await client.query(
-        'ALTER TABLE foo ADD CONSTRAINT foo_pkey PRIMARY KEY USING INDEX idx'
-      );
+      await client.query('ALTER TABLE foo ADD CONSTRAINT foo_pkey PRIMARY KEY USING INDEX idx');
       logger.info('- primary key on new_id has been created');
 
       logger.info('- dropping column id');
@@ -107,14 +99,11 @@ const changes = [
       await client.query('ALTER TABLE foo RENAME COLUMN new_id TO id');
       logger.info('- column new_id has been renamed to id');
 
-      await client.query(
-        `INSERT INTO foo(id) VALUES (${idThatWouldBeRejectedWithInteger})`
-      );
-      logger.info(
-        `- INSERT has succeeded with id ${idThatWouldBeRejectedWithInteger}`
-      );
+      await client.query(`INSERT INTO foo(id) VALUES (${idThatWouldBeRejectedWithInteger})`);
+      logger.info(`- INSERT has succeeded with id ${idThatWouldBeRejectedWithInteger}`);
 
-      await client.query('COMMIT;');console.timeEnd('Maintenance duration');
+      await client.query('COMMIT;');
+      console.timeEnd('Maintenance duration');
       logger.info('Closing maintenance window...');
 
       ////////// MAINTENANCE WINDOW STOPS HERE ////////////////////////////////
@@ -146,17 +135,11 @@ const changes = [
 
       logger.info('- changing sequence type to BIGINT');
       await client.query('ALTER SEQUENCE foo_id_seq AS BIGINT');
-      logger.info(
-        '- sequence for foo.id table has been changed to type BIGINT'
-      );
+      logger.info('- sequence for foo.id table has been changed to type BIGINT');
 
       logger.info('- inserting row with id ${idThatWouldBeRejectedWithInteger}');
-      await client.query(
-        `INSERT INTO foo(id)  VALUES (${idThatWouldBeRejectedWithInteger})`
-      );
-      logger.info(
-        `- INSERT has succeeded with id ${idThatWouldBeRejectedWithInteger}`
-      );
+      await client.query(`INSERT INTO foo(id)  VALUES (${idThatWouldBeRejectedWithInteger})`);
+      logger.info(`- INSERT has succeeded with id ${idThatWouldBeRejectedWithInteger}`);
 
       logger.info('Closing maintenance window...');
       console.timeEnd('Maintenance duration');
@@ -165,15 +148,11 @@ const changes = [
 
     },
     revert: async (client, logger) => {
-      await client.query(
-        `DELETE FROM foo WHERE id = ${idThatWouldBeRejectedWithInteger}`
-      );
-
+      await client.query(`DELETE FROM foo WHERE id = ${idThatWouldBeRejectedWithInteger}`);
       await client.query('ALTER TABLE foo DROP CONSTRAINT foo_pkey');
       await client.query('ALTER SEQUENCE foo_id_seq AS INTEGER');
       await client.query('ALTER TABLE foo ALTER COLUMN id TYPE INTEGER');
-      await client.query(
-        'ALTER TABLE foo ADD CONSTRAINT foo_pkey PRIMARY KEY(id)'
+      await client.query('ALTER TABLE foo ADD CONSTRAINT foo_pkey PRIMARY KEY(id)'
       );
     },
   },

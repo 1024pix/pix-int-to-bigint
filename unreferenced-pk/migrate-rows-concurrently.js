@@ -5,7 +5,7 @@ const migrateFooId = async (client, chunk_size, logger) => {
     let rowsUpdatedCount = 0;
     const {rows: [{max: maxId}]} = await client.query(`SELECT MAX(id) FROM foo`);
 
-    const eta = makeEta({min: 0, max: maxId});
+    const eta = makeEta({min: 0, max: maxId, historyTimeConstant: 60});
     let processedRows = 0;
 
     for (let startId = 0; startId < maxId; startId += chunk_size) {
