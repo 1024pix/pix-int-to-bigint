@@ -13,7 +13,9 @@
     "unreferenced-pk:copy-dataset": "node ./unreferenced-pk/copy-dataset.js",
     "unreferenced-pk:load-dataset": "node ./unreferenced-pk/load-dataset.js",
     "unreferenced-pk:change-type": "node ./unreferenced-pk/change-type.js",
-    "unreferenced-pk:fake-activity": "node ./unreferenced-pk/fake-activity.js"
+    "unreferenced-pk:fake-activity": "node ./unreferenced-pk/fake-activity.js",
+    "unreferenced-pk:actual:create-column": "node ./unreferenced-pk/actual-data/create-column.js",
+    "unreferenced-pk:actual:migrate-data": "node ./unreferenced-pk/actual-data/prepare-ke-bigint-id-to-be-used-as-primary-key.js"
   },
   "repository": {
     "type": "git",
