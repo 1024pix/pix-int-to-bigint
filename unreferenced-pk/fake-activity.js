@@ -1,6 +1,9 @@
 require('dotenv').config();
 const bunyan = require('bunyan');
-const logger = bunyan.createLogger({name: 'pix_bigint'});
+const logger = bunyan.createLogger({
+  name: 'fake-activity',
+  level: process.env.LOG_LEVEL || 'INFO',
+});
 const {Client} = require('pg');
 
 const agent = async (query, interval) => {
@@ -10,7 +13,9 @@ const agent = async (query, interval) => {
 
   while (true) {
     try {
+      logger.debug(`Submitting ${query}...`);
       await client.query(query);
+      logger.debug(`${query} has been executed`);
     } catch (error) {
       logger.error(error);
     }

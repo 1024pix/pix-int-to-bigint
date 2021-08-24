@@ -12,7 +12,7 @@ const CHUNK_SIZE = million;
 
 (async () => {
 
-  const logger = bunyan.createLogger({name: 'prepare'});
+  const logger = bunyan.createLogger({name: 'prepare-bigint-id'});
 
   process.on('unhandledRejection', (error) => {
     logger.fatal(error);
