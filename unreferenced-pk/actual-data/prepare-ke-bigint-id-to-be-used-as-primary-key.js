@@ -7,8 +7,23 @@ const connectionString = process.env.DATABASE_URL;
 
 const clientConfiguration = { connectionString };
 
-const million = 1000000;
-const CHUNK_SIZE = million;
+const getChunkSize = ()=>{
+  const chunkSize = parseInt(process.env.KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_CHUNK_SIZE);
+  if (isNaN(chunkSize) || chunkSize <= 0) {
+    logger.fatal('Environment variable "KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_CHUNK_SIZE" must be set as a positive integer');
+    process.exit(1);
+  }
+  return chunkSize;
+}
+
+const getPauseTime = ()=>{
+  const pauseTime = parseInt(process.env.DATA_MIGRATION_INTERVAL_MILLIS);
+  if (isNaN(pauseTime) || pauseTime <= 0) {
+    logger.fatal('Environment variable "DATA_MIGRATION_INTERVAL" must be set as a positive integer');
+    process.exit(1);
+  }
+  return pauseTime;
+}
 
 (async () => {
 
@@ -17,6 +32,10 @@ const CHUNK_SIZE = million;
   process.on('unhandledRejection', (error) => {
     logger.fatal(error);
   });
+
+  const chunkSize = getChunkSize();
+
+  const pauseTime = getPauseTime();
 
   const client = new Client(clientConfiguration);
 
@@ -30,17 +49,26 @@ const CHUNK_SIZE = million;
   client.connect();
 
   let rowsUpdatedCount = 0;
-  const data = await client.query('SELECT MAX(id) FROM "knowledge-elements"');
-  const maxId = data.rows[0].max;
+  const maxData = await client.query('SELECT MAX(id) FROM "knowledge-elements"');
+  const maxId = maxData.rows[0].max;
 
-  for (let startId = 0; startId < maxId; startId += CHUNK_SIZE) {
+  const minData = await client.query('SELECT MIN(id) FROM "knowledge-elements" WHERE "bigintId" = -1');
+  const minId = minData.rows[0].min;
+
+  logger.info(`Migrating data between ids ${minId} and ${maxId}`);
+
+  for (let id = minId; id < maxId; id += chunkSize) {
     const result = await client.query(`
         UPDATE "knowledge-elements"
         SET "bigintId" = id
-        WHERE ID BETWEEN ${startId} AND ${startId + CHUNK_SIZE}`);
+        WHERE ID BETWEEN ${id} AND ${id + chunkSize}`);
 
     rowsUpdatedCount = result.rowCount;
     logger.info(`Updated rows : ${rowsUpdatedCount}`);
+
+    await new Promise(resolve => {
+      setTimeout(resolve, pauseTime)
+    })
   }
 
   logger.info('Building index concurrently..');
