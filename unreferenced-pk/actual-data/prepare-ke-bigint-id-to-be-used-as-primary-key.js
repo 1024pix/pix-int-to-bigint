@@ -7,7 +7,7 @@ const connectionString = process.env.DATABASE_URL;
 
 const clientConfiguration = { connectionString };
 
-const getChunkSize = ()=>{
+const getChunkSize = (logger)=>{
   const chunkSize = parseInt(process.env.KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_CHUNK_SIZE);
   if (isNaN(chunkSize) || chunkSize <= 0) {
     logger.fatal('Environment variable "KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_CHUNK_SIZE" must be set as a positive integer');
@@ -16,14 +16,29 @@ const getChunkSize = ()=>{
   return chunkSize;
 }
 
-const getPauseTime = ()=>{
-  const pauseTime = parseInt(process.env.DATA_MIGRATION_INTERVAL_MILLIS);
+const getPauseTime = (logger)=>{
+  const pauseTime = parseInt(process.env.KNOWLEDGE_ELEMENTS_BIGINT_DATA_MIGRATION_INTERVAL_MILLIS);
   if (isNaN(pauseTime) || pauseTime <= 0) {
-    logger.fatal('Environment variable "DATA_MIGRATION_INTERVAL" must be set as a positive integer');
+    logger.fatal('Environment variable "KNOWLEDGE_ELEMENTS_BIGINT_DATA_MIGRATION_INTERVAL" must be set as a positive integer');
     process.exit(1);
   }
   return pauseTime;
 }
+
+const getStartId = (logger)=>{
+  const START_FIRST_SERIAL_VALUE_BY_DEFAULT = 0;
+  if (process.env.KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_START_ID) {
+    const startId = parseInt(process.env.KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_START_ID);
+    if (isNaN(startId) || startId <= 0) {
+      logger.fatal('Environment variable "KNOWLEDGE_ELEMENTS_BIGINT_MIGRATION_CHUNK_SIZE" must be set as a positive integer');
+      process.exit(1);
+    }
+    return startId;
+  } else {
+    return START_FIRST_SERIAL_VALUE_BY_DEFAULT;
+  }
+}
+
 
 (async () => {
 
@@ -33,9 +48,9 @@ const getPauseTime = ()=>{
     logger.fatal(error);
   });
 
-  const chunkSize = getChunkSize();
+  const chunkSize = getChunkSize(logger);
 
-  const pauseTime = getPauseTime();
+  const pauseTime = getPauseTime(logger);
 
   const client = new Client(clientConfiguration);
 
@@ -50,18 +65,17 @@ const getPauseTime = ()=>{
 
   let rowsUpdatedCount = 0;
   const maxData = await client.query('SELECT MAX(id) FROM "knowledge-elements"');
-  const maxId = maxData.rows[0].max;
+  const endId = maxData.rows[0].max;
 
-  const minData = await client.query('SELECT MIN(id) FROM "knowledge-elements" WHERE "bigintId" = -1');
-  const minId = minData.rows[0].min;
+  const startId = getStartId();
 
-  logger.info(`Migrating data between ids ${minId} and ${maxId}`);
+  logger.info(`Migrating data between ids ${startId} and ${endId}`);
 
-  for (let id = minId; id < maxId; id += chunkSize) {
+  for (let id = startId; id < endId; id += chunkSize) {
     const result = await client.query(`
         UPDATE "knowledge-elements"
         SET "bigintId" = id
-        WHERE ID BETWEEN ${id} AND ${id + chunkSize}`);
+        WHERE ID BETWEEN ${id} AND ${id + chunkSize - 1}`);
 
     rowsUpdatedCount = result.rowCount;
     logger.info(`Updated rows : ${rowsUpdatedCount}`);
